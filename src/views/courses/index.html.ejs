@@ -35,5 +35,8 @@
 <% } %>
 
 <% if (currentUser) { %>
-  <a href="<%= newCoursePath %>">New Course</a>
+  <ul>
+    <li><a href="<%= newCoursePath %>">New Course</a></li>
+    <li><a href="<%= uploadCoursesPath %>">Upload Courses</a></li>
+  </ul>
 <% } %>
