@@ -1,4 +1,7 @@
 const KoaRouter = require('koa-router');
+const parse = require('csv-parse/lib/sync');
+const fs = require('fs');
+const fileStorage = require('../services/file-storage');
 
 const router = new KoaRouter();
 
@@ -14,6 +17,7 @@ router.get('courses.list', '/', async (ctx) => {
     newCoursePath: ctx.router.url('courses.new'),
     editCoursePath: (course) => ctx.router.url('courses.edit', { id: course.id }),
     deleteCoursePath: (course) => ctx.router.url('courses.delete', { id: course.id }),
+    uploadCoursesPath: ctx.router.url('courses.upload'),
   });
 });
 
@@ -65,6 +69,28 @@ router.patch('courses.update', '/:id', loadCourse, async (ctx) => {
 router.del('courses.delete', '/:id', loadCourse, async (ctx) => {
   const { course } = ctx.state;
   await course.destroy();
+  ctx.redirect(ctx.router.url('courses.list'));
+});
+
+router.get('courses.upload', '/upload', async (ctx) => {
+  await ctx.render('courses/upload', {
+    submitCoursesPath: ctx.router.url('courses.load'),
+  });
+});
+
+router.post('courses.load', '/upload', async (ctx) => {
+  const { list } = ctx.request.files;
+
+  const fileContent = fs.readFileSync(list.path);
+  const coursesRow = parse(fileContent, { columns: true, delimiter: ';' });
+  const coursesPromises = coursesRow.map((row) => {
+    const course = ctx.orm.course.build(row);
+    return course.save({ fields: ['code', 'name', 'description'] });
+  });
+
+  await Promise.all(coursesPromises);
+
+  await fileStorage.upload(list);
   ctx.redirect(ctx.router.url('courses.list'));
 });
 
