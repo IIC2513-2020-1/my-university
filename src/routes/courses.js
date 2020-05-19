@@ -12,13 +12,23 @@ async function loadCourse(ctx, next) {
 
 router.get('courses.list', '/', async (ctx) => {
   const coursesList = await ctx.orm.course.findAll();
-  await ctx.render('courses/index', {
-    coursesList,
-    newCoursePath: ctx.router.url('courses.new'),
-    editCoursePath: (course) => ctx.router.url('courses.edit', { id: course.id }),
-    deleteCoursePath: (course) => ctx.router.url('courses.delete', { id: course.id }),
-    uploadCoursesPath: ctx.router.url('courses.upload'),
-  });
+
+  switch (ctx.accepts(['json', 'html'])) {
+    case 'json':
+      ctx.body = coursesList;
+      break;
+    case 'html':
+      await ctx.render('courses/index', {
+        coursesList,
+        newCoursePath: ctx.router.url('courses.new'),
+        editCoursePath: (course) => ctx.router.url('courses.edit', { id: course.id }),
+        deleteCoursePath: (course) => ctx.router.url('courses.delete', { id: course.id }),
+        uploadCoursesPath: ctx.router.url('courses.upload'),
+      });
+      break;
+    default:
+      break;
+  }
 });
 
 router.get('courses.new', '/new', async (ctx) => {
